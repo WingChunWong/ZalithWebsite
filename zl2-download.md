@@ -9,5 +9,5 @@ aside: false
 
 支持 Android 平台的各种架构（arm64-v8a, armeabi-v7a, x86_64, x86）。
 
-<DownloadZL2/>
+<DownloadComponent project="zl2" />
 
