@@ -31,8 +31,8 @@ const canvasRef = ref(null);
 let apngPlayer = null;
 
 async function getImgBuffer(url) {
-	return new Promise(async (resolve) => {
-		const blob = await fetch(url).then((res) => res.blob());
+	const blob = await fetch(url).then((res) => res.blob());
+	return new Promise((resolve) => {
 		const reader = new FileReader();
 		reader.readAsArrayBuffer(blob);
 		reader.onload = () => {
@@ -67,7 +67,7 @@ async function initApngPlayer() {
 
 watch(
 	() => props.src,
-	async (newSrc) => {
+	async () => {
 		if (apngPlayer) {
 			apngPlayer.stop();
 		}
