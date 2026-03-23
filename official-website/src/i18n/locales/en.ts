@@ -11,7 +11,6 @@ export default {
 		contactUs: "Contact Us (GitHub)",
 		privacyPolicy: "Privacy Policy",
 		termsOfService: "Terms of Service",
-		allRightsReserved: "All rights reserved.",
 		notAffiliated:
 			"Minecraft is a trademark of Mojang AB. Not affiliated with Microsoft/Mojang.",
 		loading: "Loading...",
