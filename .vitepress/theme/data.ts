@@ -67,7 +67,7 @@ export const Footer_Data: FooterData = {
 				name: "Zalith Launcher",
 				link: "https://github.com/ZalithLauncher",
 				startYear: 2024,
-				text: "All Rights Reserved.",
+				text: "MIT License.",
 			},
 		},
 		en: {
@@ -127,7 +127,7 @@ export const Footer_Data: FooterData = {
 				name: "Zalith Launcher",
 				link: "https://github.com/ZalithLauncher",
 				startYear: 2024,
-				text: "All Rights Reserved.",
+				text: "MIT License.",
 			},
 		},
 	},
