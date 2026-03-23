@@ -54,9 +54,7 @@ export default (<DefaultTheme.Config>{
 		{ text: "启动器文档", link: "/docs/projects/zl2" },
 		{
 			text: "更多",
-			items: [
-				{ text: "关于本站", link: "/docs/about/about" },
-			],
+			items: [{ text: "关于本站", link: "/docs/about/about" }],
 		},
 		{
 			text: "切换网络节点",

@@ -13,7 +13,7 @@ const props = withDefaults(
 	}>(),
 	{
 		project: "zl1",
-	}
+	},
 );
 
 // 项目配置
@@ -26,23 +26,60 @@ const PROJECT_CONFIG = {
 		mirrorPrefix: "zl",
 		mirrorVersionTransform: (v: string) => v.replace(/\./g, ""),
 		hasFoxington: true,
-		foxingtonUrl: "https://next.foldcraftlauncher.cn/data/down/zl/1/1.4.1.0/index.json",
+		foxingtonUrl:
+			"https://next.foldcraftlauncher.cn/data/down/zl/1/1.4.1.0/index.json",
 		hahaUrl: "https://api.mirror.frostlynx.work/api/projects/zl/latest",
 		lemwoodUrl: "https://mirror.lemwood.icu/api/status/zl",
 		enableDesktopPlatforms: true,
 		sources: [
-			{ id: "github", name: "GitHub 官方", description: "官方发布渠道", speed: "海外较快" },
-			{ id: "mirror", name: "国内镜像", description: "第三方加速", speed: "国内较快", contributor: { name: "咬一口的鱼py(fishcpy)", url: "https://github.com/fishcpy" } },
-			{ id: "foxington", name: "XiaoluoFoxington源", description: "第三方镜像源", speed: "国内较快", contributor: { name: "XiaoluoFoxington", url: "https://github.com/XiaoluoFoxington" } },
-			{ id: "haha", name: "哈哈源", description: "FrostLynx 提供", speed: "国内较快", contributor: { name: "FrostLynx", url: "https://frostlynx.work" } },
-			{ id: "lemwood", name: "柠枺镜像", description: "由 柠枺(lemwood.cn) 提供", speed: "国内较快", contributor: { name: "柠枺", url: "https://lemwood.cn" } },
+			{
+				id: "github",
+				name: "GitHub 官方",
+				description: "官方发布渠道",
+				speed: "海外较快",
+			},
+			{
+				id: "mirror",
+				name: "国内镜像",
+				description: "第三方加速",
+				speed: "国内较快",
+				contributor: {
+					name: "咬一口的鱼py(fishcpy)",
+					url: "https://github.com/fishcpy",
+				},
+			},
+			{
+				id: "foxington",
+				name: "XiaoluoFoxington源",
+				description: "第三方镜像源",
+				speed: "国内较快",
+				contributor: {
+					name: "XiaoluoFoxington",
+					url: "https://github.com/XiaoluoFoxington",
+				},
+			},
+			{
+				id: "haha",
+				name: "哈哈源",
+				description: "FrostLynx 提供",
+				speed: "国内较快",
+				contributor: { name: "FrostLynx", url: "https://frostlynx.work" },
+			},
+			{
+				id: "lemwood",
+				name: "柠枺镜像",
+				description: "由 柠枺(lemwood.cn) 提供",
+				speed: "国内较快",
+				contributor: { name: "柠枺", url: "https://lemwood.cn" },
+			},
 		],
 	},
 	zl2: {
 		cacheKeyPrefix: "zl2_download_cache_",
 		githubRepo: "ZalithLauncher/ZalithLauncher2",
 		localVersionFile: "/version2.json",
-		versionJsonUrl: "https://fcl.lemwood.icu/zalith-info/v2/latest_version_md.json",
+		versionJsonUrl:
+			"https://fcl.lemwood.icu/zalith-info/v2/latest_version_md.json",
 		mirrorPrefix: "zl2",
 		mirrorVersionTransform: (v: string) => v,
 		hasFoxington: false,
@@ -51,10 +88,36 @@ const PROJECT_CONFIG = {
 		lemwoodUrl: "https://mirror.lemwood.icu/api/status/zl2",
 		enableDesktopPlatforms: false,
 		sources: [
-			{ id: "github", name: "GitHub 官方", description: "官方发布渠道", speed: "海外较快" },
-			{ id: "mirror", name: "fishcpy源", description: "咬一口的鱼py提供", speed: "国内较快", contributor: { name: "咬一口的鱼py(fishcpy)", url: "https://github.com/fishcpy" } },
-			{ id: "haha", name: "哈哈源", description: "FrostLynx 提供", speed: "国内较快", contributor: { name: "FrostLynx", url: "https://frostlynx.work" } },
-			{ id: "lemwood", name: "柠枺镜像", description: "Lemwood 提供", speed: "国内较快", contributor: { name: "Lemwood", url: "https://lemwood.cn" } },
+			{
+				id: "github",
+				name: "GitHub 官方",
+				description: "官方发布渠道",
+				speed: "海外较快",
+			},
+			{
+				id: "mirror",
+				name: "fishcpy源",
+				description: "咬一口的鱼py提供",
+				speed: "国内较快",
+				contributor: {
+					name: "咬一口的鱼py(fishcpy)",
+					url: "https://github.com/fishcpy",
+				},
+			},
+			{
+				id: "haha",
+				name: "哈哈源",
+				description: "FrostLynx 提供",
+				speed: "国内较快",
+				contributor: { name: "FrostLynx", url: "https://frostlynx.work" },
+			},
+			{
+				id: "lemwood",
+				name: "柠枺镜像",
+				description: "Lemwood 提供",
+				speed: "国内较快",
+				contributor: { name: "Lemwood", url: "https://lemwood.cn" },
+			},
 		],
 	},
 };
@@ -100,28 +163,69 @@ const fallbackToLocal = ref(false);
 const isSyncing = ref(false);
 
 // 计算属性
-const sourceAvailability = computed((): Record<string, boolean> => ({
-	github: true,
-	mirror: !fallbackToLocal.value,
-	foxington: config.value.hasFoxington && !fallbackToLocal.value && foxingtonData.value !== null,
-	haha: !fallbackToLocal.value && hahaData.value !== null,
-	lemwood: !fallbackToLocal.value && lemwoodData.value !== null && Array.isArray(lemwoodData.value) && lemwoodData.value.length > 0,
-}));
+const sourceAvailability = computed(
+	(): Record<string, boolean> => ({
+		github: true,
+		mirror: !fallbackToLocal.value,
+		foxington:
+			config.value.hasFoxington &&
+			!fallbackToLocal.value &&
+			foxingtonData.value !== null,
+		haha: !fallbackToLocal.value && hahaData.value !== null,
+		lemwood:
+			!fallbackToLocal.value &&
+			lemwoodData.value !== null &&
+			Array.isArray(lemwoodData.value) &&
+			lemwoodData.value.length > 0,
+	}),
+);
 
-const downloadSources = computed(() => config.value.sources as DownloadSource[]);
+const downloadSources = computed(
+	() => config.value.sources as DownloadSource[],
+);
 
 // 基础设备类型
 const baseDeviceTypes = computed((): DeviceType[] => {
 	const base: DeviceType[] = [
-		{ id: "all", name: "全部文件", icon: "", description: "显示所有下载文件", patterns: ["*"] },
+		{
+			id: "all",
+			name: "全部文件",
+			icon: "",
+			description: "显示所有下载文件",
+			patterns: ["*"],
+		},
 	];
 
 	if (config.value.enableDesktopPlatforms) {
 		base.push(
-			{ id: "windows", name: "Windows", icon: "", description: "Windows 电脑", patterns: ["windows", "win", ".exe", ".msi"] },
-			{ id: "macos", name: "macOS", icon: "", description: "Mac 电脑", patterns: ["macos", "mac", "darwin", ".dmg"] },
-			{ id: "linux", name: "Linux", icon: "", description: "Linux 系统", patterns: ["linux", ".appimage", ".deb", ".rpm", ".tar.gz"] },
-			{ id: "ios", name: "iOS", icon: "", description: "iPhone/iPad", patterns: ["ios", ".ipa"] }
+			{
+				id: "windows",
+				name: "Windows",
+				icon: "",
+				description: "Windows 电脑",
+				patterns: ["windows", "win", ".exe", ".msi"],
+			},
+			{
+				id: "macos",
+				name: "macOS",
+				icon: "",
+				description: "Mac 电脑",
+				patterns: ["macos", "mac", "darwin", ".dmg"],
+			},
+			{
+				id: "linux",
+				name: "Linux",
+				icon: "",
+				description: "Linux 系统",
+				patterns: ["linux", ".appimage", ".deb", ".rpm", ".tar.gz"],
+			},
+			{
+				id: "ios",
+				name: "iOS",
+				icon: "",
+				description: "iPhone/iPad",
+				patterns: ["ios", ".ipa"],
+			},
 		);
 	}
 
@@ -139,14 +243,22 @@ const dynamicDeviceTypes = computed(() => {
 	assets.forEach((asset) => {
 		const fileName = asset.name.toLowerCase();
 
-		if (fileName.includes("arm64-v8a") || fileName.includes("arm64")) architectures.add("arm64");
-		else if (fileName.includes("armeabi-v7a") || fileName.includes("armeabi")) architectures.add("armeabi");
-		else if (fileName.includes("x86_64") || fileName.includes("x86-64")) architectures.add("x86_64");
+		if (fileName.includes("arm64-v8a") || fileName.includes("arm64"))
+			architectures.add("arm64");
+		else if (fileName.includes("armeabi-v7a") || fileName.includes("armeabi"))
+			architectures.add("armeabi");
+		else if (fileName.includes("x86_64") || fileName.includes("x86-64"))
+			architectures.add("x86_64");
 		else if (fileName.includes("x86")) architectures.add("x86");
 		else if (fileName.includes("universal")) architectures.add("universal");
 
 		baseDeviceTypes.value.forEach((type) => {
-			if (type.id !== "all" && type.patterns.some((p) => p === "*" || fileName.includes(p.toLowerCase()))) {
+			if (
+				type.id !== "all" &&
+				type.patterns.some(
+					(p) => p === "*" || fileName.includes(p.toLowerCase()),
+				)
+			) {
 				detectedTypes.add(type.id);
 			}
 		});
@@ -244,8 +356,13 @@ function getCache(key: string): unknown {
 
 function setCache(key: string, data: unknown): void {
 	try {
-		localStorage.setItem(`${config.value.cacheKeyPrefix}${key}`, JSON.stringify({ data, timestamp: Date.now() }));
-	} catch { /* ignore */ }
+		localStorage.setItem(
+			`${config.value.cacheKeyPrefix}${key}`,
+			JSON.stringify({ data, timestamp: Date.now() }),
+		);
+	} catch {
+		/* ignore */
+	}
 }
 
 // IP 检测
@@ -257,13 +374,21 @@ async function detectIsChinaIP(): Promise<boolean> {
 	}
 
 	const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-	const isChinaTZ = ["Asia/Shanghai", "Asia/Chongqing", "Asia/Harbin", "Asia/Urumqi"].includes(timeZone);
+	const isChinaTZ = [
+		"Asia/Shanghai",
+		"Asia/Chongqing",
+		"Asia/Harbin",
+		"Asia/Urumqi",
+	].includes(timeZone);
 
 	try {
 		const controller = new AbortController();
 		const timeoutId = setTimeout(() => controller.abort(), 3000);
 		const response = await fetch("https://ipapi.co/json/", {
-			headers: { Accept: "application/json", "User-Agent": "ZalithLauncher-Website/1.0" },
+			headers: {
+				Accept: "application/json",
+				"User-Agent": "ZalithLauncher-Website/1.0",
+			},
 			signal: controller.signal,
 		});
 		clearTimeout(timeoutId);
@@ -272,7 +397,10 @@ async function detectIsChinaIP(): Promise<boolean> {
 			const data = await response.json();
 			const isCN = data.country === "CN" || data.region === "China";
 			localStorage.setItem("isChineseIP", isCN.toString());
-			localStorage.setItem("isChineseIPExpire", (Date.now() + 24 * 60 * 60 * 1000).toString());
+			localStorage.setItem(
+				"isChineseIPExpire",
+				(Date.now() + 24 * 60 * 60 * 1000).toString(),
+			);
 			return isCN;
 		}
 	} catch {
@@ -289,7 +417,10 @@ async function fetchFromApi(): Promise<Record<string, unknown>> {
 	const timeoutId = setTimeout(() => controller.abort(), 10000);
 
 	const response = await fetch(url, {
-		headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "ZalithLauncher-Website/1.0" },
+		headers: {
+			Accept: "application/vnd.github.v3+json",
+			"User-Agent": "ZalithLauncher-Website/1.0",
+		},
 		signal: controller.signal,
 	});
 	clearTimeout(timeoutId);
@@ -361,16 +492,25 @@ const localizedDescription = computed(() => {
 	if (!versionJsonData.value) return null;
 
 	if (props.project === "zl1") {
-		const desc = versionJsonData.value.description as Record<string, string> | undefined;
+		const desc = versionJsonData.value.description as
+			| Record<string, string>
+			| undefined;
 		if (!desc) return null;
 
 		const currentLang = lang.value.toLowerCase();
-		if (currentLang.includes("zh-tw") || currentLang.includes("zh-hk")) return desc.zh_tw || desc.zh_cn || desc.en_us;
+		if (currentLang.includes("zh-tw") || currentLang.includes("zh-hk"))
+			return desc.zh_tw || desc.zh_cn || desc.en_us;
 		if (currentLang.includes("zh")) return desc.zh_cn || desc.en_us;
 		return desc.en_us || desc.zh_cn;
 	} else {
-		const bodies = (versionJsonData.value.bodies as Array<{ language: string; markdown: string }>) || [];
-		const defaultBody = versionJsonData.value.default_body as { markdown?: string } | undefined;
+		const bodies =
+			(versionJsonData.value.bodies as Array<{
+				language: string;
+				markdown: string;
+			}>) || [];
+		const defaultBody = versionJsonData.value.default_body as
+			| { markdown?: string }
+			| undefined;
 		const currentLang = lang.value.toLowerCase();
 
 		const targetBody = currentLang.includes("zh")
@@ -396,8 +536,15 @@ async function fetchLatestRelease(): Promise<void> {
 
 	// 1. 从缓存加载
 	const cachedRelease = getCache("release") as Record<string, unknown> | null;
-	const cachedMirrors = getCache("mirrors") as { foxington?: unknown; haha?: unknown; lemwood?: unknown } | null;
-	const cachedVersionJson = getCache("versionJson") as Record<string, unknown> | null;
+	const cachedMirrors = getCache("mirrors") as {
+		foxington?: unknown;
+		haha?: unknown;
+		lemwood?: unknown;
+	} | null;
+	const cachedVersionJson = getCache("versionJson") as Record<
+		string,
+		unknown
+	> | null;
 
 	let hasCache = false;
 
@@ -412,7 +559,8 @@ async function fetchLatestRelease(): Promise<void> {
 	}
 	if (cachedMirrors) {
 		foxingtonData.value = (cachedMirrors.foxington as unknown[] | null) ?? null;
-		hahaData.value = (cachedMirrors.haha as Record<string, unknown> | null) ?? null;
+		hahaData.value =
+			(cachedMirrors.haha as Record<string, unknown> | null) ?? null;
 		lemwoodData.value = (cachedMirrors.lemwood as unknown[] | null) ?? null;
 		loadingStage.value = "mirror";
 	}
@@ -420,7 +568,8 @@ async function fetchLatestRelease(): Promise<void> {
 	if (hasCache) {
 		isSyncing.value = true;
 		autoSelectDeviceType();
-		const body = localizedDescription.value || (cachedRelease?.body as string) || "";
+		const body =
+			localizedDescription.value || (cachedRelease?.body as string) || "";
 		if (body) parsedBody.value = await marked.parse(body);
 	} else {
 		loadingStage.value = "ui";
@@ -451,8 +600,16 @@ async function fetchLatestRelease(): Promise<void> {
 	};
 
 	const fetchMirrorsTask = async () => {
-		await Promise.allSettled([fetchFoxingtonData(), fetchHahaData(), fetchLemwoodData()]);
-		setCache("mirrors", { foxington: foxingtonData.value, haha: hahaData.value, lemwood: lemwoodData.value });
+		await Promise.allSettled([
+			fetchFoxingtonData(),
+			fetchHahaData(),
+			fetchLemwoodData(),
+		]);
+		setCache("mirrors", {
+			foxington: foxingtonData.value,
+			haha: hahaData.value,
+			lemwood: lemwoodData.value,
+		});
 		loadingStage.value = "mirror";
 	};
 
@@ -460,10 +617,16 @@ async function fetchLatestRelease(): Promise<void> {
 		if (await detectIsChinaIP()) selectedDownloadSource.value = "lemwood";
 	};
 
-	await Promise.allSettled([fetchReleaseTask(), fetchVersionJsonTask(), fetchMirrorsTask(), detectIPTask()]);
+	await Promise.allSettled([
+		fetchReleaseTask(),
+		fetchVersionJsonTask(),
+		fetchMirrorsTask(),
+		detectIPTask(),
+	]);
 
 	// 3. 更新 body
-	const body = localizedDescription.value || (latestRelease.value?.body as string) || "";
+	const body =
+		localizedDescription.value || (latestRelease.value?.body as string) || "";
 	if (body) parsedBody.value = await marked.parse(body);
 
 	isSyncing.value = false;
@@ -478,7 +641,9 @@ async function fetchLatestRelease(): Promise<void> {
 function autoSelectDeviceType(): void {
 	if (dynamicDeviceTypes.value.length > 1) {
 		const detectedType = detectUserDeviceType();
-		const availableType = dynamicDeviceTypes.value.find((t) => t.id === detectedType);
+		const availableType = dynamicDeviceTypes.value.find(
+			(t) => t.id === detectedType,
+		);
 		if (availableType) selectedDeviceType.value = detectedType;
 	}
 }
@@ -490,7 +655,8 @@ function generateMirrorUrl(assetName: string, tagName: string): string {
 }
 
 function getFoxingtonUrl(asset: Record<string, unknown>): string {
-	if (!foxingtonData.value || !Array.isArray(foxingtonData.value)) return asset.browser_download_url as string;
+	if (!foxingtonData.value || !Array.isArray(foxingtonData.value))
+		return asset.browser_download_url as string;
 
 	const fileName = (asset.name as string).toLowerCase();
 	let targetArchName = "all 架构";
@@ -500,12 +666,15 @@ function getFoxingtonUrl(asset: Record<string, unknown>): string {
 	else if (fileName.includes("x86_64")) targetArchName = "x86_64 架构";
 	else if (fileName.includes("x86")) targetArchName = "x86 架构";
 
-	const matchedFile = (foxingtonData.value as Array<Record<string, unknown>>).find((f) => f.name === targetArchName);
+	const matchedFile = (
+		foxingtonData.value as Array<Record<string, unknown>>
+	).find((f) => f.name === targetArchName);
 	return (matchedFile?.url as string) || (asset.browser_download_url as string);
 }
 
 function getHahaUrl(asset: Record<string, unknown>): string {
-	if (!hahaData.value || !hahaData.value.files) return asset.browser_download_url as string;
+	if (!hahaData.value || !hahaData.value.files)
+		return asset.browser_download_url as string;
 
 	const fileName = (asset.name as string).toLowerCase();
 	let targetArch = "";
@@ -515,29 +684,42 @@ function getHahaUrl(asset: Record<string, unknown>): string {
 	else if (fileName.includes("x86_64")) targetArch = "x86_64";
 	else if (fileName.includes("x86")) targetArch = "x86";
 
-	const matchedFile = (hahaData.value.files as Array<{ arch: string; link: string }>).find(
-		(f) => f.arch === targetArch || (!targetArch && (!f.arch || f.arch === "all"))
+	const matchedFile = (
+		hahaData.value.files as Array<{ arch: string; link: string }>
+	).find(
+		(f) =>
+			f.arch === targetArch || (!targetArch && (!f.arch || f.arch === "all")),
 	);
 	return matchedFile?.link || (asset.browser_download_url as string);
 }
 
 function getLemwoodUrl(asset: Record<string, unknown>): string {
-	if (!lemwoodData.value || !Array.isArray(lemwoodData.value)) return asset.browser_download_url as string;
+	if (!lemwoodData.value || !Array.isArray(lemwoodData.value))
+		return asset.browser_download_url as string;
 
 	const currentTagName = latestRelease.value?.tag_name as string;
 	const normalizedTagName = currentTagName?.replace(/^v/, "");
 
-	let matchedRelease = (lemwoodData.value as Array<{ tag_name: string; assets?: Array<{ name: string; url: string }> }>).find(
-		(r) => r.tag_name === currentTagName || r.tag_name === normalizedTagName
+	let matchedRelease = (
+		lemwoodData.value as Array<{
+			tag_name: string;
+			assets?: Array<{ name: string; url: string }>;
+		}>
+	).find(
+		(r) => r.tag_name === currentTagName || r.tag_name === normalizedTagName,
 	);
 
 	if (matchedRelease?.assets) {
-		const matchedAsset = matchedRelease.assets.find((a) => a.name === asset.name);
+		const matchedAsset = matchedRelease.assets.find(
+			(a) => a.name === asset.name,
+		);
 		if (matchedAsset) return matchedAsset.url;
 	}
 
 	for (let i = lemwoodData.value.length - 1; i >= 0; i--) {
-		const release = lemwoodData.value[i] as { assets?: Array<{ name: string; url: string }> };
+		const release = lemwoodData.value[i] as {
+			assets?: Array<{ name: string; url: string }>;
+		};
 		if (release.assets) {
 			const matchedAsset = release.assets.find((a) => a.name === asset.name);
 			if (matchedAsset) return matchedAsset.url;
@@ -551,11 +733,19 @@ function getDownloadUrl(asset: Record<string, unknown>): string {
 	if (fallbackToLocal.value) return asset.browser_download_url as string;
 
 	switch (selectedDownloadSource.value) {
-		case "mirror": return generateMirrorUrl(asset.name as string, latestRelease.value?.tag_name as string);
-		case "foxington": return getFoxingtonUrl(asset);
-		case "haha": return getHahaUrl(asset);
-		case "lemwood": return getLemwoodUrl(asset);
-		default: return asset.browser_download_url as string;
+		case "mirror":
+			return generateMirrorUrl(
+				asset.name as string,
+				latestRelease.value?.tag_name as string,
+			);
+		case "foxington":
+			return getFoxingtonUrl(asset);
+		case "haha":
+			return getHahaUrl(asset);
+		case "lemwood":
+			return getLemwoodUrl(asset);
+		default:
+			return asset.browser_download_url as string;
 	}
 }
 
@@ -566,17 +756,29 @@ const filteredAssets = computed(() => {
 	const assets = latestRelease.value.assets as Array<Record<string, unknown>>;
 	if (selectedDeviceType.value === "all") return assets;
 
-	const currentType = dynamicDeviceTypes.value.find((t) => t.id === selectedDeviceType.value);
+	const currentType = dynamicDeviceTypes.value.find(
+		(t) => t.id === selectedDeviceType.value,
+	);
 	if (!currentType) return assets;
 
 	return assets.filter((asset) => {
 		const fileName = (asset.name as string).toLowerCase();
-		return currentType.patterns.some((p) => p === "*" || fileName.includes(p.toLowerCase()));
+		return currentType.patterns.some(
+			(p) => p === "*" || fileName.includes(p.toLowerCase()),
+		);
 	});
 });
 
-const currentDeviceType = computed(() => dynamicDeviceTypes.value.find((t) => t.id === selectedDeviceType.value) || dynamicDeviceTypes.value[0]);
-const currentDownloadSource = computed(() => downloadSources.value.find((s) => s.id === selectedDownloadSource.value) || downloadSources.value[0]);
+const currentDeviceType = computed(
+	() =>
+		dynamicDeviceTypes.value.find((t) => t.id === selectedDeviceType.value) ||
+		dynamicDeviceTypes.value[0],
+);
+const currentDownloadSource = computed(
+	() =>
+		downloadSources.value.find((s) => s.id === selectedDownloadSource.value) ||
+		downloadSources.value[0],
+);
 
 // 格式化
 function formatFileSize(bytes: number): string {
@@ -588,11 +790,15 @@ function formatFileSize(bytes: number): string {
 }
 
 function handleDeviceDropdownBlur(): void {
-	setTimeout(() => { isDeviceDropdownOpen.value = false; }, 200);
+	setTimeout(() => {
+		isDeviceDropdownOpen.value = false;
+	}, 200);
 }
 
 function handleSourceDropdownBlur(): void {
-	setTimeout(() => { isSourceDropdownOpen.value = false; }, 200);
+	setTimeout(() => {
+		isSourceDropdownOpen.value = false;
+	}, 200);
 }
 
 // 生命周期

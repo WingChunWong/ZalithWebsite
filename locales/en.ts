@@ -57,9 +57,7 @@ export default (<DefaultTheme.Config>{
 		{ text: "Launcher Docs", link: "/en/docs/projects/zl2" },
 		{
 			text: "More",
-			items: [
-				{ text: "About this site", link: "/en/docs/about/about" },
-			],
+			items: [{ text: "About this site", link: "/en/docs/about/about" }],
 		},
 		{
 			text: "Switch Network Node",
