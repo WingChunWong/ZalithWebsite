@@ -54,10 +54,10 @@ export default (<DefaultTheme.Config>{
 				{ text: "Zalith Launcher 2", link: "/en/zl2-download" },
 			],
 		},
+		{ text: "Launcher Docs", link: "/en/docs/projects/zl2" },
 		{
 			text: "More",
 			items: [
-				{ text: "Launcher Documentation", link: "/docs/projects/zl2" },
 				{ text: "About this site", link: "/en/docs/about/about" },
 			],
 		},
