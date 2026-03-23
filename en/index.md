@@ -30,7 +30,3 @@ features:
     title: Content Manager
     details: Manage game resources for different game versions
 ---
-
-### Legal Disclaimer
-Minecraft® is a registered trademark of _Microsoft Corporation_ and _Mojang Synergies AB_.
-ZalithLauncher is not affiliated with or endorsed by Microsoft, Mojang, or NetEase.

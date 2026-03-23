@@ -1,124 +1,130 @@
 export default {
-  common: {
-    download: "Download Now",
-    viewDocs: "View Docs",
-    backToHome: "Back to Home",
-    home: "Home",
-    features: "Features",
-    downloadCenter: "Download Center",
-    docs: "Docs",
-    beta: "Preview / Beta",
-    contactUs: "Contact Us (GitHub)",
-    privacyPolicy: "Privacy Policy",
-    termsOfService: "Terms of Service",
-    allRightsReserved: "All rights reserved.",
-    notAffiliated: "Minecraft is a trademark of Mojang AB. Not affiliated with Microsoft/Mojang.",
-    loading: "Loading...",
-    error: "Error",
-    retry: "Retry",
-  },
-  nav: {
-    home: "Home",
-    features: "Features",
-    download: "Download",
-    docs: "Docs",
-  },
-  hero: {
-    badge: "Stable, Efficient, Pure",
-    title: "On Android <span class='text-[var(--brand)]'>Redefining</span> Java Experience",
-    description: "Zalith Launcher is a Minecraft: Java Edition launcher built specifically for Android. It provides exceptional performance, minimalist design, and full customization.",
-    speed: "Fast Launch",
-    speedDesc: "Optimized core for entering the game world in seconds",
-    safe: "Pure & Safe",
-    safeDesc: "Open source, no ads, no extra permission requests",
-    custom: "Highly Customizable",
-    customDesc: "Everything from UI to game parameters can be configured",
-  },
-  features: {
-    title: "Why Choose Zalith?",
-    subtitle: "We are more than just a launcher; we are your best companion for playing Java Edition on mobile.",
-    ui: {
-      title: "Modern UI Experience",
-      desc: "Built with a modern design language, providing a smooth and intuitive interface. Say goodbye to cumbersome operations; every feature is at your fingertips, making launching the game a joy."
-    },
-    download: {
-      title: "All-in-One Download",
-      desc: "Built-in powerful download manager to directly fetch and install game cores, mods, modpacks, and resource packs. Multi-source acceleration for lightning-fast downloads."
-    },
-    version: {
-      title: "Robust Version Management",
-      desc: "Supports flexible version isolation and custom path settings. Easily manage Vanilla, Fabric, or Forge environments keeping them organized and independent."
-    },
-    render: {
-      title: "Rich Renderer Support",
-      desc: "Built-in multiple renderer solutions with advanced parameter tuning. Find the perfect rendering configuration to balance game quality and framerate for any device."
-    },
-    multiplayer: {
-      title: "Built-in Multiplayer",
-      desc: "Native support for multiplayer gameplay, easily connecting to major servers. Fight alongside friends, explore endless block worlds, and enjoy a stable online experience."
-    },
-    settings: {
-      title: "Highly Customizable",
-      desc: "From game parameters to control layouts, from language options to appearance themes, everything can be configured on demand to create your personalized launcher environment."
-    }
-  },
-  download: {
-    title: "Get Zalith Launcher",
-    subtitle: "Get the version of Zalith Launcher that best fits your device",
-    recommend: "Recommended",
-    legacy: "Legacy",
-    apiFailed: "API Access Restricted",
-    apiFailedDesc: "GitHub API is inaccessible, automatically switched to local cache data.",
-    publishedAt: "Published at",
-    deviceType: "Device Type",
-    source: "Download Source",
-    assetsTitle: "Asset List",
-    noAssets: "No matching files for this architecture",
-    releaseNotes: "Release Notes",
-    noNotes: "No detailed release notes available",
-    officialRelease: "Official Release, Safe & Pure",
-    multiSource: "Multi-source Acceleration",
-    communityPowered: "Open Source Community",
-    downloads: "Downloads",
-    cloudDrive: "Cloud Drive Download",
-    cloudDriveDesc: "Recommended for users in China",
-    cloudDriveBtn: "Open Cloud Drive",
-    devices: {
-      all: "All Files",
-      allDesc: "Display all downloadable assets",
-      android: "Universal Version",
-      androidDesc: "Don't know which one? Choose this",
-      arm64: "ARM64",
-      arm64Desc: "Qualcomm Snapdragon/Dimensity (64-bit)",
-      armeabi: "ARMv7",
-      armeabiDesc: "Legacy 32-bit Processors",
-      x86_64: "x86-64",
-      x86_64Desc: "Emulators or Intel (64-bit)",
-      x86: "x86",
-      x86Desc: "Intel (32-bit)",
-      universal: "Universal",
-      universalDesc: "Maximum compatibility (All archs)",
-    },
-  },
-  footer: {
-    desc: "Dedicated to providing Android users with the purest, most efficient, and modern Minecraft Java Edition launching experience.",
-    projects: "Projects",
-    community: "Community",
-    support: "Support",
-    afdian: "Afdian Support",
-    githubOrg: "GitHub Org",
-    qqGroup: "QQ Group (Donation Required)",
-    weblate: "Weblate Translation",
-    globalNodes: "Global Nodes",
-    poweredBy: "Powered by Community",
-  },
-  privacy: {
-    lastUpdated: "Last Updated: Feb 8, 2026",
-    version: "Version 1.2",
-    questionTitle: "Questions about policy?",
-    questionDesc: "If you need further information about how we handle your data, feel free to contact us.",
-    submitIssue: "Open Issue",
-    content: `# Privacy Policy
+	common: {
+		download: "Download Now",
+		viewDocs: "View Docs",
+		backToHome: "Back to Home",
+		home: "Home",
+		features: "Features",
+		downloadCenter: "Download Center",
+		docs: "Docs",
+		beta: "Preview / Beta",
+		contactUs: "Contact Us (GitHub)",
+		privacyPolicy: "Privacy Policy",
+		termsOfService: "Terms of Service",
+		allRightsReserved: "All rights reserved.",
+		notAffiliated:
+			"Minecraft is a trademark of Mojang AB. Not affiliated with Microsoft/Mojang.",
+		loading: "Loading...",
+		error: "Error",
+		retry: "Retry",
+	},
+	nav: {
+		home: "Home",
+		features: "Features",
+		download: "Download",
+		docs: "Docs",
+	},
+	hero: {
+		badge: "Stable, Efficient, Pure",
+		title:
+			"On Android <span class='text-[var(--brand)]'>Redefining</span> Java Experience",
+		description:
+			"Zalith Launcher is a Minecraft: Java Edition launcher built specifically for Android. It provides exceptional performance, minimalist design, and full customization.",
+		speed: "Fast Launch",
+		speedDesc: "Optimized core for entering the game world in seconds",
+		safe: "Pure & Safe",
+		safeDesc: "Open source, no ads, no extra permission requests",
+		custom: "Highly Customizable",
+		customDesc: "Everything from UI to game parameters can be configured",
+	},
+	features: {
+		title: "Why Choose Zalith?",
+		subtitle:
+			"We are more than just a launcher; we are your best companion for playing Java Edition on mobile.",
+		ui: {
+			title: "Modern UI Experience",
+			desc: "Built with a modern design language, providing a smooth and intuitive interface. Say goodbye to cumbersome operations; every feature is at your fingertips, making launching the game a joy.",
+		},
+		download: {
+			title: "All-in-One Download",
+			desc: "Built-in powerful download manager to directly fetch and install game cores, mods, modpacks, and resource packs. Multi-source acceleration for lightning-fast downloads.",
+		},
+		version: {
+			title: "Robust Version Management",
+			desc: "Supports flexible version isolation and custom path settings. Easily manage Vanilla, Fabric, or Forge environments keeping them organized and independent.",
+		},
+		render: {
+			title: "Rich Renderer Support",
+			desc: "Built-in multiple renderer solutions with advanced parameter tuning. Find the perfect rendering configuration to balance game quality and framerate for any device.",
+		},
+		multiplayer: {
+			title: "Built-in Multiplayer",
+			desc: "Native support for multiplayer gameplay, easily connecting to major servers. Fight alongside friends, explore endless block worlds, and enjoy a stable online experience.",
+		},
+		settings: {
+			title: "Highly Customizable",
+			desc: "From game parameters to control layouts, from language options to appearance themes, everything can be configured on demand to create your personalized launcher environment.",
+		},
+	},
+	download: {
+		title: "Get Zalith Launcher",
+		subtitle: "Get the version of Zalith Launcher that best fits your device",
+		recommend: "Recommended",
+		legacy: "Legacy",
+		apiFailed: "API Access Restricted",
+		apiFailedDesc:
+			"GitHub API is inaccessible, automatically switched to local cache data.",
+		publishedAt: "Published at",
+		deviceType: "Device Type",
+		source: "Download Source",
+		assetsTitle: "Asset List",
+		noAssets: "No matching files for this architecture",
+		releaseNotes: "Release Notes",
+		noNotes: "No detailed release notes available",
+		officialRelease: "Official Release, Safe & Pure",
+		multiSource: "Multi-source Acceleration",
+		communityPowered: "Open Source Community",
+		downloads: "Downloads",
+		cloudDrive: "Cloud Drive Download",
+		cloudDriveDesc: "Recommended for users in China",
+		cloudDriveBtn: "Open Cloud Drive",
+		devices: {
+			all: "All Files",
+			allDesc: "Display all downloadable assets",
+			android: "Universal Version",
+			androidDesc: "Don't know which one? Choose this",
+			arm64: "ARM64",
+			arm64Desc: "Qualcomm Snapdragon/Dimensity (64-bit)",
+			armeabi: "ARMv7",
+			armeabiDesc: "Legacy 32-bit Processors",
+			x86_64: "x86-64",
+			x86_64Desc: "Emulators or Intel (64-bit)",
+			x86: "x86",
+			x86Desc: "Intel (32-bit)",
+			universal: "Universal",
+			universalDesc: "Maximum compatibility (All archs)",
+		},
+	},
+	footer: {
+		desc: "Dedicated to providing Android users with the purest, most efficient, and modern Minecraft Java Edition launching experience.",
+		projects: "Projects",
+		community: "Community",
+		support: "Support",
+		afdian: "Afdian Support",
+		githubOrg: "GitHub Org",
+		qqGroup: "QQ Group (Donation Required)",
+		weblate: "Weblate Translation",
+		globalNodes: "Global Nodes",
+		poweredBy: "Powered by Community",
+	},
+	privacy: {
+		lastUpdated: "Last Updated: Feb 8, 2026",
+		version: "Version 1.2",
+		questionTitle: "Questions about policy?",
+		questionDesc:
+			"If you need further information about how we handle your data, feel free to contact us.",
+		submitIssue: "Open Issue",
+		content: `# Privacy Policy
 
 Zalith Launcher ("we", "us", or "our") respects your privacy and is committed to protecting your personal data. This Privacy Policy explains how we handle your information when you visit our website and use our services.
 
@@ -158,5 +164,5 @@ We implement reasonable security measures to protect your information from unaut
 ## 5. Policy Updates
 
 We may update this Privacy Policy from time to time. We recommend checking this page periodically for the latest information.`,
-  }
+	},
 };

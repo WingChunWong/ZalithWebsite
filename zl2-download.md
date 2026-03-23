@@ -1,5 +1,6 @@
 ---
 sidebar: false
+aside: false
 ---
 
 # 下载 Zalith Launcher 2

@@ -1,875 +1,971 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useData } from 'vitepress'
-import { marked, type MarkedOptions } from 'marked' // 从marked v4+开始支持具名导出
+import { ref, onMounted, computed } from "vue";
+import { useData } from "vitepress";
+import { marked, type MarkedOptions } from "marked"; // 从marked v4+开始支持具名导出
 
-const { lang } = useData()
+const { lang } = useData();
 
 /*
   由于VitePress并不会解析该组件的latestRelease.body内容，故单独引入marked库解析为HTML后返回至页面
 */
 
 interface DeviceType {
-  id: string
-  name: string
-  icon: string
-  description: string
-  patterns: string[]
+	id: string;
+	name: string;
+	icon: string;
+	description: string;
+	patterns: string[];
 }
 
 interface DownloadSource {
-  id: string
-  name: string
-  description: string
-  speed: string
-  contributor?: {
-    name: string
-    url: string
-  }
+	id: string;
+	name: string;
+	description: string;
+	speed: string;
+	contributor?: {
+		name: string;
+		url: string;
+	};
 }
 
-const latestRelease = ref<any>(null)
-const foxingtonData = ref<any>(null)
-const lemwoodData = ref<any>(null)
-const hahaData = ref<any>(null)
-const versionJsonData = ref<any>(null)
-const loadingStage = ref<'ui' | 'release' | 'notes' | 'mirror'>('ui')
-const hasError = ref(false)
-const errorMessage = ref('')
-const parsedBody = ref('')
-const selectedDeviceType = ref('all')
-const selectedDownloadSource = ref('github')
-const isDeviceDropdownOpen = ref(false)
-const isSourceDropdownOpen = ref(false)
-const apiFailed = ref(false)
-const fallbackToLocal = ref(false)
+const latestRelease = ref<any>(null);
+const foxingtonData = ref<any>(null);
+const lemwoodData = ref<any>(null);
+const hahaData = ref<any>(null);
+const versionJsonData = ref<any>(null);
+const loadingStage = ref<"ui" | "release" | "notes" | "mirror">("ui");
+const hasError = ref(false);
+const errorMessage = ref("");
+const parsedBody = ref("");
+const selectedDeviceType = ref("all");
+const selectedDownloadSource = ref("github");
+const isDeviceDropdownOpen = ref(false);
+const isSourceDropdownOpen = ref(false);
+const apiFailed = ref(false);
+const fallbackToLocal = ref(false);
 
 const sourceAvailability = computed(() => ({
-  github: true,
-  mirror: !fallbackToLocal.value,
-  foxington: !fallbackToLocal.value && foxingtonData.value !== null,
-  haha: !fallbackToLocal.value && hahaData.value !== null,
-  lemwood: !fallbackToLocal.value && lemwoodData.value !== null && lemwoodData.value.length > 0
-}))
+	github: true,
+	mirror: !fallbackToLocal.value,
+	foxington: !fallbackToLocal.value && foxingtonData.value !== null,
+	haha: !fallbackToLocal.value && hahaData.value !== null,
+	lemwood:
+		!fallbackToLocal.value &&
+		lemwoodData.value !== null &&
+		lemwoodData.value.length > 0,
+}));
 
 // 基础设备类型定义（会根据API返回的文件动态扩展）
 const baseDeviceTypes: DeviceType[] = [
-  { 
-    id: 'all', 
-    name: '全部文件', 
-    icon: '', 
-    description: '显示所有下载文件',
-    patterns: ['*']
-  },
-  { 
-    id: 'windows', 
-    name: 'Windows', 
-    icon: '', 
-    description: 'Windows 电脑',
-    patterns: ['windows', 'win', '.exe', '.msi']
-  },
-  { 
-    id: 'macos', 
-    name: 'macOS', 
-    icon: '', 
-    description: 'Mac 电脑',
-    patterns: ['macos', 'mac', 'darwin', '.dmg']
-  },
-  { 
-    id: 'linux', 
-    name: 'Linux', 
-    icon: '', 
-    description: 'Linux 系统',
-    patterns: ['linux', '.appimage', '.deb', '.rpm', '.tar.gz']
-  },
-  { 
-    id: 'ios', 
-    name: 'iOS', 
-    icon: '', 
-    description: 'iPhone/iPad',
-    patterns: ['ios', '.ipa']
-  }
-]
+	{
+		id: "all",
+		name: "全部文件",
+		icon: "",
+		description: "显示所有下载文件",
+		patterns: ["*"],
+	},
+	{
+		id: "windows",
+		name: "Windows",
+		icon: "",
+		description: "Windows 电脑",
+		patterns: ["windows", "win", ".exe", ".msi"],
+	},
+	{
+		id: "macos",
+		name: "macOS",
+		icon: "",
+		description: "Mac 电脑",
+		patterns: ["macos", "mac", "darwin", ".dmg"],
+	},
+	{
+		id: "linux",
+		name: "Linux",
+		icon: "",
+		description: "Linux 系统",
+		patterns: ["linux", ".appimage", ".deb", ".rpm", ".tar.gz"],
+	},
+	{
+		id: "ios",
+		name: "iOS",
+		icon: "",
+		description: "iPhone/iPad",
+		patterns: ["ios", ".ipa"],
+	},
+];
 
 // 下载源定义
 const downloadSources: DownloadSource[] = [
-  { id: 'github', name: 'GitHub 官方', description: '官方发布渠道', speed: '海外较快' },
-  { id: 'mirror', name: '国内镜像', description: '第三方加速', speed: '国内较快', contributor: { name: '咬一口的鱼py(fishcpy)', url: 'https://github.com/fishcpy' } },
-  { id: 'foxington', name: 'github.com/XiaoluoFoxington源', description: '第三方镜像源', speed: '国内较快', contributor: { name: 'XiaoluoFoxington', url: 'https://github.com/XiaoluoFoxington' } },
-  { id: 'haha', name: '哈哈源', description: 'FrostLynx 提供', speed: '国内较快', contributor: { name: 'FrostLynx', url: 'https://frostlynx.work' } },
-  { id: 'lemwood', name: '柠枺镜像', description: '由 柠枺(lemwood.cn) 提供', speed: '国内较快', contributor: { name: '柠枺', url: 'https://lemwood.cn' } }
-]
+	{
+		id: "github",
+		name: "GitHub 官方",
+		description: "官方发布渠道",
+		speed: "海外较快",
+	},
+	{
+		id: "mirror",
+		name: "国内镜像",
+		description: "第三方加速",
+		speed: "国内较快",
+		contributor: {
+			name: "咬一口的鱼py(fishcpy)",
+			url: "https://github.com/fishcpy",
+		},
+	},
+	{
+		id: "foxington",
+		name: "github.com/XiaoluoFoxington源",
+		description: "第三方镜像源",
+		speed: "国内较快",
+		contributor: {
+			name: "XiaoluoFoxington",
+			url: "https://github.com/XiaoluoFoxington",
+		},
+	},
+	{
+		id: "haha",
+		name: "哈哈源",
+		description: "FrostLynx 提供",
+		speed: "国内较快",
+		contributor: { name: "FrostLynx", url: "https://frostlynx.work" },
+	},
+	{
+		id: "lemwood",
+		name: "柠枺镜像",
+		description: "由 柠枺(lemwood.cn) 提供",
+		speed: "国内较快",
+		contributor: { name: "柠枺", url: "https://lemwood.cn" },
+	},
+];
 
 // 动态设备类型（基于API返回的文件）
 const dynamicDeviceTypes = computed(() => {
-  if (!latestRelease.value?.assets) return baseDeviceTypes
+	if (!latestRelease.value?.assets) return baseDeviceTypes;
 
-  const assets = latestRelease.value.assets
-  const detectedTypes = new Set<string>()
-  const architectures = new Set<string>()
-  
-  // 分析文件名，提取设备类型和架构信息
-  assets.forEach((asset: any) => {
-    const fileName = asset.name.toLowerCase()
-    
-    // 检测Android架构（按优先级检测，避免误匹配）
-    if (fileName.includes('arm64-v8a') || fileName.includes('arm64')) {
-      architectures.add('arm64')
-    } else if (fileName.includes('armeabi-v7a') || fileName.includes('armeabi')) {
-      architectures.add('armeabi')
-    } else if (fileName.includes('x86_64') || fileName.includes('x86-64')) {
-      architectures.add('x86_64')
-    } else if (fileName.includes('x86')) {
-      architectures.add('x86')
-    } else if (fileName.includes('universal')) {
-      architectures.add('universal')
-    }
-    
-    // 检测平台
-    baseDeviceTypes.forEach(type => {
-      if (type.id !== 'all' && type.patterns.some(pattern => 
-        pattern === '*' || fileName.includes(pattern.toLowerCase())
-      )) {
-        detectedTypes.add(type.id)
-      }
-    })
-  })
+	const assets = latestRelease.value.assets;
+	const detectedTypes = new Set<string>();
+	const architectures = new Set<string>();
 
-  // 构建动态设备类型列表
-  const result = [baseDeviceTypes[0]] // 始终包含 "全部文件"
-  
-  // 添加检测到的基础平台类型
-  baseDeviceTypes.slice(1).forEach(type => {
-    if (detectedTypes.has(type.id)) {
-      result.push(type)
-    }
-  })
-  
-  // 添加架构特定的类型（按常见程度排序）
-  const archOrder = ['arm64', 'armeabi', 'x86_64', 'x86', 'universal']
-  archOrder.forEach(arch => {
-    if (architectures.has(arch)) {
-      const archType: DeviceType = {
-        id: arch,
-        name: getArchDisplayName(arch),
-        icon: getArchIcon(arch),
-        description: getArchDescription(arch),
-        patterns: getArchPatterns(arch)
-      }
-      result.push(archType)
-    }
-  })
-  
-  return result
-})
+	// 分析文件名，提取设备类型和架构信息
+	assets.forEach((asset: any) => {
+		const fileName = asset.name.toLowerCase();
+
+		// 检测Android架构（按优先级检测，避免误匹配）
+		if (fileName.includes("arm64-v8a") || fileName.includes("arm64")) {
+			architectures.add("arm64");
+		} else if (
+			fileName.includes("armeabi-v7a") ||
+			fileName.includes("armeabi")
+		) {
+			architectures.add("armeabi");
+		} else if (fileName.includes("x86_64") || fileName.includes("x86-64")) {
+			architectures.add("x86_64");
+		} else if (fileName.includes("x86")) {
+			architectures.add("x86");
+		} else if (fileName.includes("universal")) {
+			architectures.add("universal");
+		}
+
+		// 检测平台
+		baseDeviceTypes.forEach((type) => {
+			if (
+				type.id !== "all" &&
+				type.patterns.some(
+					(pattern) =>
+						pattern === "*" || fileName.includes(pattern.toLowerCase()),
+				)
+			) {
+				detectedTypes.add(type.id);
+			}
+		});
+	});
+
+	// 构建动态设备类型列表
+	const result = [baseDeviceTypes[0]]; // 始终包含 "全部文件"
+
+	// 添加检测到的基础平台类型
+	baseDeviceTypes.slice(1).forEach((type) => {
+		if (detectedTypes.has(type.id)) {
+			result.push(type);
+		}
+	});
+
+	// 添加架构特定的类型（按常见程度排序）
+	const archOrder = ["arm64", "armeabi", "x86_64", "x86", "universal"];
+	archOrder.forEach((arch) => {
+		if (architectures.has(arch)) {
+			const archType: DeviceType = {
+				id: arch,
+				name: getArchDisplayName(arch),
+				icon: getArchIcon(arch),
+				description: getArchDescription(arch),
+				patterns: getArchPatterns(arch),
+			};
+			result.push(archType);
+		}
+	});
+
+	return result;
+});
 
 // 获取架构匹配模式
 function getArchPatterns(arch: string): string[] {
-  switch (arch) {
-    case 'arm64': return ['arm64-v8a', 'arm64']
-    case 'armeabi': return ['armeabi-v7a', 'armeabi']
-    case 'x86_64': return ['x86_64', 'x86-64']
-    case 'x86': return ['x86.apk'] // 精确匹配，避免匹配到x86_64
-    case 'universal': return ['universal']
-    default: return [arch]
-  }
+	switch (arch) {
+		case "arm64":
+			return ["arm64-v8a", "arm64"];
+		case "armeabi":
+			return ["armeabi-v7a", "armeabi"];
+		case "x86_64":
+			return ["x86_64", "x86-64"];
+		case "x86":
+			return ["x86.apk"]; // 精确匹配，避免匹配到x86_64
+		case "universal":
+			return ["universal"];
+		default:
+			return [arch];
+	}
 }
 
 // 获取架构显示名称
 function getArchDisplayName(arch: string): string {
-  switch (arch) {
-    case 'arm64': return 'ARM64'
-    case 'armeabi': return 'ARMv7'
-    case 'x86_64': return 'x86-64'
-    case 'x86': return 'x86'
-    case 'universal': return '通用版本'
-    default: return arch.toUpperCase()
-  }
+	switch (arch) {
+		case "arm64":
+			return "ARM64";
+		case "armeabi":
+			return "ARMv7";
+		case "x86_64":
+			return "x86-64";
+		case "x86":
+			return "x86";
+		case "universal":
+			return "通用版本";
+		default:
+			return arch.toUpperCase();
+	}
 }
 
 // 获取架构图标
 function getArchIcon(arch: string): string {
-  switch (arch) {
-    case 'arm64': return ''
-    case 'armeabi': return ''
-    case 'x86_64': return ''
-    case 'x86': return ''
-    case 'universal': return ''
-    default: return ''
-  }
+	switch (arch) {
+		case "arm64":
+			return "";
+		case "armeabi":
+			return "";
+		case "x86_64":
+			return "";
+		case "x86":
+			return "";
+		case "universal":
+			return "";
+		default:
+			return "";
+	}
 }
 
 // 获取架构描述
 function getArchDescription(arch: string): string {
-  switch (arch) {
-    case 'arm64': return '64位 ARM 架构（推荐）'
-    case 'armeabi': return '32位 ARM 架构'
-    case 'x86_64': return '64位 x86 架构'
-    case 'x86': return '32位 x86 架构'
-    case 'universal': return '通用架构版本'
-    default: return '特定架构'
-  }
+	switch (arch) {
+		case "arm64":
+			return "64位 ARM 架构（推荐）";
+		case "armeabi":
+			return "32位 ARM 架构";
+		case "x86_64":
+			return "64位 x86 架构";
+		case "x86":
+			return "32位 x86 架构";
+		case "universal":
+			return "通用架构版本";
+		default:
+			return "特定架构";
+	}
 }
 
 // 自动检测用户设备类型和架构
 function detectUserDeviceType(): string {
-  const userAgent = navigator.userAgent.toLowerCase()
-  
-  // 检测Android设备架构
-  if (/android/.test(userAgent)) {
-    // 尝试检测具体架构
-    if (/arm64|aarch64/.test(userAgent)) {
-      return 'arm64'
-    } else if (/armv7|armeabi/.test(userAgent)) {
-      return 'armeabi'
-    } else if (/x86_64|x64/.test(userAgent)) {
-      return 'x86_64'
-    } else if (/x86/.test(userAgent)) {
-      return 'x86'
-    }
-    // 默认推荐ARM64（现代Android设备主流架构）
-    return 'arm64'
-  } else if (/iphone|ipad|ipod/.test(userAgent)) {
-    return 'ios'
-  } else if (/mac/.test(userAgent)) {
-    return 'macos'
-  } else if (/win/.test(userAgent)) {
-    return 'windows'
-  } else if (/linux/.test(userAgent)) {
-    return 'linux'
-  }
-  
-  return 'all' // 默认显示全部
+	const userAgent = navigator.userAgent.toLowerCase();
+
+	// 检测Android设备架构
+	if (/android/.test(userAgent)) {
+		// 尝试检测具体架构
+		if (/arm64|aarch64/.test(userAgent)) {
+			return "arm64";
+		} else if (/armv7|armeabi/.test(userAgent)) {
+			return "armeabi";
+		} else if (/x86_64|x64/.test(userAgent)) {
+			return "x86_64";
+		} else if (/x86/.test(userAgent)) {
+			return "x86";
+		}
+		// 默认推荐ARM64（现代Android设备主流架构）
+		return "arm64";
+	} else if (/iphone|ipad|ipod/.test(userAgent)) {
+		return "ios";
+	} else if (/mac/.test(userAgent)) {
+		return "macos";
+	} else if (/win/.test(userAgent)) {
+		return "windows";
+	} else if (/linux/.test(userAgent)) {
+		return "linux";
+	}
+
+	return "all"; // 默认显示全部
 }
 
 // 检测用户是否为国内IP
 async function detectIsChinaIP(): Promise<boolean> {
-  try {
-    // 使用ipapi.co的免费API检测IP
-    const response = await fetch('https://ipapi.co/json/', {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'ZalithLauncher-Website/1.0'
-      }
-    })
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-    
-    const data = await response.json()
-    // 如果国家代码为CN，或地区为中国，返回true
-    return data.country === 'CN' || data.region === 'China'
-  } catch (error) {
-    console.warn('IP检测失败，默认使用GitHub源:', error)
-    return false
-  }
+	try {
+		// 使用ipapi.co的免费API检测IP
+		const response = await fetch("https://ipapi.co/json/", {
+			headers: {
+				Accept: "application/json",
+				"User-Agent": "ZalithLauncher-Website/1.0",
+			},
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}`);
+		}
+
+		const data = await response.json();
+		// 如果国家代码为CN，或地区为中国，返回true
+		return data.country === "CN" || data.region === "China";
+	} catch (error) {
+		console.warn("IP检测失败，默认使用GitHub源:", error);
+		return false;
+	}
 }
 
 // API配置
 const API_CONFIGS = [
-  {
-    name: '官方API',
-    url: 'https://api.github.com/repos/ZalithLauncher/ZalithLauncher/releases/latest',
-    timeout: 10000 // 10秒超时
-  }
-]
+	{
+		name: "官方API",
+		url: "https://api.github.com/repos/ZalithLauncher/ZalithLauncher/releases/latest",
+		timeout: 10000, // 10秒超时
+	},
+];
 
 // 测试API可用性
 async function testApiAvailability(apiConfig: any): Promise<boolean> {
-  try {
-    const controller = new AbortController()
-    const timeoutId = window.setTimeout(() => controller.abort(), apiConfig.timeout)
-    
-    const response = await fetch(apiConfig.url, {
-      headers: {
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'ZalithLauncher-Website/1.0'
-      },
-      signal: controller.signal
-    })
-    
-    window.clearTimeout(timeoutId)
-    return response.ok
-  } catch (error) {
-    console.warn(`${apiConfig.name} 不可用:`, error)
-    return false
-  }
+	try {
+		const controller = new AbortController();
+		const timeoutId = window.setTimeout(
+			() => controller.abort(),
+			apiConfig.timeout,
+		);
+
+		const response = await fetch(apiConfig.url, {
+			headers: {
+				Accept: "application/vnd.github.v3+json",
+				"User-Agent": "ZalithLauncher-Website/1.0",
+			},
+			signal: controller.signal,
+		});
+
+		window.clearTimeout(timeoutId);
+		return response.ok;
+	} catch (error) {
+		console.warn(`${apiConfig.name} 不可用:`, error);
+		return false;
+	}
 }
 
 // 从指定API获取数据
 async function fetchFromApi(apiConfig: any): Promise<any> {
-  const controller = new AbortController()
-  const timeoutId = window.setTimeout(() => controller.abort(), apiConfig.timeout)
-  
-  try {
-    const response = await fetch(apiConfig.url, {
-      headers: {
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'ZalithLauncher-Website/1.0'
-      },
-      signal: controller.signal
-    })
-    
-    window.clearTimeout(timeoutId)
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    return await response.json()
-  } catch (error) {
-    window.clearTimeout(timeoutId)
-    throw error
-  }
+	const controller = new AbortController();
+	const timeoutId = window.setTimeout(
+		() => controller.abort(),
+		apiConfig.timeout,
+	);
+
+	try {
+		const response = await fetch(apiConfig.url, {
+			headers: {
+				Accept: "application/vnd.github.v3+json",
+				"User-Agent": "ZalithLauncher-Website/1.0",
+			},
+			signal: controller.signal,
+		});
+
+		window.clearTimeout(timeoutId);
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+
+		return await response.json();
+	} catch (error) {
+		window.clearTimeout(timeoutId);
+		throw error;
+	}
 }
 
 // 获取Foxington源数据
 async function fetchFoxingtonData() {
-  const foxingtonUrl = 'https://next.foldcraftlauncher.cn/data/down/zl/1/1.4.1.0/index.json'
-  
-  try {
-    console.log('尝试直接获取Foxington源数据...')
-    const response = await fetch(foxingtonUrl, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'ZalithLauncher-Website/1.0'
-      }
-    })
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    foxingtonData.value = data
-    console.log('✅ Foxington源数据获取成功（直接请求）')
-    return
-  } catch (error) {
-    console.warn('❌ 直接请求Foxington源失败:', error)
-    
-    try {
-      console.log('尝试使用代理API获取Foxington源数据...')
-      const proxyResponse = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(foxingtonUrl)}`, {
-        headers: {
-          'Accept': 'application/json'
-        }
-      })
-      
-      if (!proxyResponse.ok) {
-        throw new Error(`代理API HTTP ${proxyResponse.status}: ${proxyResponse.statusText}`)
-      }
-      
-      const proxyData = await proxyResponse.json()
-      
-      if (!proxyData.contents) {
-        throw new Error('代理API返回数据格式错误')
-      }
-      
-      const data = JSON.parse(proxyData.contents)
-      foxingtonData.value = data
-      console.log('✅ Foxington源数据获取成功（代理API）')
-    } catch (proxyError) {
-      console.warn('❌ 代理API也失败了:', proxyError)
-      foxingtonData.value = null
-    }
-  }
+	const foxingtonUrl =
+		"https://next.foldcraftlauncher.cn/data/down/zl/1/1.4.1.0/index.json";
+
+	try {
+		console.log("尝试直接获取Foxington源数据...");
+		const response = await fetch(foxingtonUrl, {
+			headers: {
+				Accept: "application/json",
+				"User-Agent": "ZalithLauncher-Website/1.0",
+			},
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+
+		const data = await response.json();
+		foxingtonData.value = data;
+		console.log("✅ Foxington源数据获取成功（直接请求）");
+		return;
+	} catch (error) {
+		console.warn("❌ 直接请求Foxington源失败:", error);
+
+		try {
+			console.log("尝试使用代理API获取Foxington源数据...");
+			const proxyResponse = await fetch(
+				`https://api.allorigins.win/get?url=${encodeURIComponent(foxingtonUrl)}`,
+				{
+					headers: {
+						Accept: "application/json",
+					},
+				},
+			);
+
+			if (!proxyResponse.ok) {
+				throw new Error(
+					`代理API HTTP ${proxyResponse.status}: ${proxyResponse.statusText}`,
+				);
+			}
+
+			const proxyData = await proxyResponse.json();
+
+			if (!proxyData.contents) {
+				throw new Error("代理API返回数据格式错误");
+			}
+
+			const data = JSON.parse(proxyData.contents);
+			foxingtonData.value = data;
+			console.log("✅ Foxington源数据获取成功（代理API）");
+		} catch (proxyError) {
+			console.warn("❌ 代理API也失败了:", proxyError);
+			foxingtonData.value = null;
+		}
+	}
 }
 
 // 获取哈哈源数据
 async function fetchHahaData() {
-  const hahaUrl = 'https://api.mirror.frostlynx.work/api/projects/zl/latest'
-  
-  try {
-    console.log('尝试直接获取哈哈源数据...')
-    const response = await fetch(hahaUrl, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'ZalithLauncher-Website/1.0'
-      }
-    })
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    hahaData.value = data
-    console.log('✅ 哈哈源数据获取成功（直接请求）')
-    return
-  } catch (error) {
-    console.warn('❌ 直接请求哈哈源失败:', error)
-    
-    try {
-      console.log('尝试使用代理API获取哈哈源数据...')
-      const proxyResponse = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(hahaUrl)}`, {
-        headers: {
-          'Accept': 'application/json'
-        }
-      })
-      
-      if (!proxyResponse.ok) {
-        throw new Error(`代理API HTTP ${proxyResponse.status}: ${proxyResponse.statusText}`)
-      }
-      
-      const proxyData = await proxyResponse.json()
-      
-      if (!proxyData.contents) {
-        throw new Error('代理API返回数据格式错误')
-      }
-      
-      const data = JSON.parse(proxyData.contents)
-      hahaData.value = data
-      console.log('✅ 哈哈源数据获取成功（代理API）')
-    } catch (proxyError) {
-      console.warn('❌ 代理API也失败了:', proxyError)
-      hahaData.value = null
-    }
-  }
+	const hahaUrl = "https://api.mirror.frostlynx.work/api/projects/zl/latest";
+
+	try {
+		console.log("尝试直接获取哈哈源数据...");
+		const response = await fetch(hahaUrl, {
+			headers: {
+				Accept: "application/json",
+				"User-Agent": "ZalithLauncher-Website/1.0",
+			},
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+
+		const data = await response.json();
+		hahaData.value = data;
+		console.log("✅ 哈哈源数据获取成功（直接请求）");
+		return;
+	} catch (error) {
+		console.warn("❌ 直接请求哈哈源失败:", error);
+
+		try {
+			console.log("尝试使用代理API获取哈哈源数据...");
+			const proxyResponse = await fetch(
+				`https://api.allorigins.win/get?url=${encodeURIComponent(hahaUrl)}`,
+				{
+					headers: {
+						Accept: "application/json",
+					},
+				},
+			);
+
+			if (!proxyResponse.ok) {
+				throw new Error(
+					`代理API HTTP ${proxyResponse.status}: ${proxyResponse.statusText}`,
+				);
+			}
+
+			const proxyData = await proxyResponse.json();
+
+			if (!proxyData.contents) {
+				throw new Error("代理API返回数据格式错误");
+			}
+
+			const data = JSON.parse(proxyData.contents);
+			hahaData.value = data;
+			console.log("✅ 哈哈源数据获取成功（代理API）");
+		} catch (proxyError) {
+			console.warn("❌ 代理API也失败了:", proxyError);
+			hahaData.value = null;
+		}
+	}
 }
-
-
 
 // 获取柠枺镜像源数据
 async function fetchLemwoodData() {
-  const url = 'https://mirror.lemwood.icu/api/status/zl';
-  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-  
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Direct fetch failed');
-    const data = await response.json();
-    lemwoodData.value = data;
-  } catch (e) {
-    console.warn('直接获取柠枺数据失败，尝试使用代理...', e);
-    try {
-      const response = await fetch(proxyUrl);
-      if (!response.ok) throw new Error('Proxy fetch failed');
-          const data = await response.json();
-          const contents = JSON.parse(data.contents);
-          lemwoodData.value = contents;
-    } catch (proxyError) {
-      console.error("通过代理获取柠枺数据失败:", proxyError);
-      // 不标记主API失败，只是这个源不可用
-    }
-  }
+	const url = "https://mirror.lemwood.icu/api/status/zl";
+	const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+
+	try {
+		const response = await fetch(url);
+		if (!response.ok) throw new Error("Direct fetch failed");
+		const data = await response.json();
+		lemwoodData.value = data;
+	} catch (e) {
+		console.warn("直接获取柠枺数据失败，尝试使用代理...", e);
+		try {
+			const response = await fetch(proxyUrl);
+			if (!response.ok) throw new Error("Proxy fetch failed");
+			const data = await response.json();
+			const contents = JSON.parse(data.contents);
+			lemwoodData.value = contents;
+		} catch (proxyError) {
+			console.error("通过代理获取柠枺数据失败:", proxyError);
+			// 不标记主API失败，只是这个源不可用
+		}
+	}
 }
 
 // 加载本地版本信息
 async function loadLocalVersionInfo() {
-  try {
-    console.log('开始加载本地版本信息...')
-    
-    // 从public目录加载version.json文件
-    const response = await fetch('/version.json')
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const localData = await response.json()
-    
-    // 构建与GitHub API兼容的数据结构
-    const localRelease = {
-      name: `ZalithLauncher ${localData.latest_version}`,
-      tag_name: `v${localData.latest_version}`,
-      published_at: localData.release_date,
-      body: localData.body,
-      assets: localData.assets.map((asset: any) => ({
-        id: Math.random().toString(36).substr(2, 9), // 生成随机ID
-        name: asset.name,
-        browser_download_url: asset.browser_download_url,
-        size: asset.size,
-        download_count: asset.download_count
-      }))
-    }
-    
-    console.log('✅ 本地版本信息加载成功')
-    return localRelease
-  } catch (error) {
-    console.error('❌ 加载本地版本信息失败:', error)
-    throw error
-  }
+	try {
+		console.log("开始加载本地版本信息...");
+
+		// 从public目录加载version.json文件
+		const response = await fetch("/version.json");
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+
+		const localData = await response.json();
+
+		// 构建与GitHub API兼容的数据结构
+		const localRelease = {
+			name: `ZalithLauncher ${localData.latest_version}`,
+			tag_name: `v${localData.latest_version}`,
+			published_at: localData.release_date,
+			body: localData.body,
+			assets: localData.assets.map((asset: any) => ({
+				id: Math.random().toString(36).substr(2, 9), // 生成随机ID
+				name: asset.name,
+				browser_download_url: asset.browser_download_url,
+				size: asset.size,
+				download_count: asset.download_count,
+			})),
+		};
+
+		console.log("✅ 本地版本信息加载成功");
+		return localRelease;
+	} catch (error) {
+		console.error("❌ 加载本地版本信息失败:", error);
+		throw error;
+	}
 }
 
 // 获取本地化版本描述数据
 async function fetchVersionJsonData() {
-  const url = 'https://fcl.lemwood.icu/zalith-info/launcher_version.json'
-  try {
-    const response = await fetch(url)
-    if (!response.ok) throw new Error('Fetch version json failed')
-    versionJsonData.value = await response.json()
-    console.log('✅ 本地化版本数据获取成功')
-  } catch (error) {
-    console.warn('❌ 获取本地化版本数据失败:', error)
-  }
+	const url = "https://fcl.lemwood.icu/zalith-info/launcher_version.json";
+	try {
+		const response = await fetch(url);
+		if (!response.ok) throw new Error("Fetch version json failed");
+		versionJsonData.value = await response.json();
+		console.log("✅ 本地化版本数据获取成功");
+	} catch (error) {
+		console.warn("❌ 获取本地化版本数据失败:", error);
+	}
 }
 
 // 根据当前语言获取对应的描述
 const localizedDescription = computed(() => {
-  if (!versionJsonData.value?.description) return null
-  
-  const currentLang = lang.value.toLowerCase()
-  const desc = versionJsonData.value.description
-  
-  if (currentLang.includes('zh-tw') || currentLang.includes('zh-hk')) {
-    return desc.zh_tw || desc.zh_cn || desc.en_us
-  } else if (currentLang.includes('zh')) {
-    return desc.zh_cn || desc.en_us
-  } else {
-    return desc.en_us || desc.zh_cn
-  }
-})
+	if (!versionJsonData.value?.description) return null;
+
+	const currentLang = lang.value.toLowerCase();
+	const desc = versionJsonData.value.description;
+
+	if (currentLang.includes("zh-tw") || currentLang.includes("zh-hk")) {
+		return desc.zh_tw || desc.zh_cn || desc.en_us;
+	} else if (currentLang.includes("zh")) {
+		return desc.zh_cn || desc.en_us;
+	} else {
+		return desc.en_us || desc.zh_cn;
+	}
+});
 
 // 获取最新版本（带API检测、自动切换和异常处理）
 async function fetchLatestRelease() {
-  loadingStage.value = 'ui'
-  hasError.value = false
-  errorMessage.value = ''
-  apiFailed.value = false
-  fallbackToLocal.value = false
-  
-  try {
-    console.log('开始获取最新版本信息...')
-    
-    // 依次尝试每个API
-    for (const apiConfig of API_CONFIGS) {
-      try {
-        console.log(`尝试使用 ${apiConfig.name}...`)
-        
-        const data = await fetchFromApi(apiConfig)
-        
-        console.log(`✅ ${apiConfig.name} 请求成功`)
-        latestRelease.value = data
-        
-        // 阶段1完成: release数据已加载
-        loadingStage.value = 'release'
-        
-        // 阶段2: 获取发布说明
-        await fetchVersionJsonData()
-        
-        // 优先使用本地化数据中的描述
-        const body = localizedDescription.value || data.body || ''
-        parsedBody.value = body ? await marked.parse(body) : ''
-        
-        // 阶段2完成: 发布说明已加载
-        loadingStage.value = 'notes'
-        
-        // 阶段3: 获取镜像数据
-        await Promise.all([
-          fetchFoxingtonData(),
-          fetchHahaData(),
-          fetchLemwoodData()
-        ])
-        
-        // 阶段3完成: 镜像数据已加载
-        loadingStage.value = 'mirror'
-        
-        // 数据加载完成后自动检测设备类型
-        autoSelectDeviceType()
-        
-        // 检测是否为国内IP，如果是则自动切换到柠枺源
-        const isChinaIP = await detectIsChinaIP()
-        if (isChinaIP) {
-          selectedDownloadSource.value = 'lemwood'
-        }
-        return // 成功获取数据，退出函数
-        
-      } catch (error) {
-        console.warn(`❌ ${apiConfig.name} 请求失败:`, error)
-        
-        // 如果不是最后一个API，继续尝试下一个
-        if (apiConfig !== API_CONFIGS[API_CONFIGS.length - 1]) {
-          console.log('尝试下一个API...')
-          continue
-        }
-        
-        // 如果是最后一个API也失败了，标记API失败并尝试获取本地版本信息但不限制下载源
-        apiFailed.value = true
-        console.log('所有API都无法访问，尝试获取本地版本信息但不限制下载源...')
-        
-        try {
-          const localRelease = await loadLocalVersionInfo()
-          latestRelease.value = localRelease
-          
-          // 阶段1完成
-          loadingStage.value = 'release'
-          
-          // 阶段2: 获取发布说明
-          await fetchVersionJsonData()
-          
-          // 优先使用本地化数据中的描述
-          const body = localizedDescription.value || localRelease.body || ''
-          parsedBody.value = body ? await marked.parse(body) : ''
-          
-          // 阶段2完成
-          loadingStage.value = 'notes'
-          
-          // 阶段3: 获取镜像数据
-          await Promise.all([
-            fetchFoxingtonData(),
-            fetchHahaData(),
-            fetchLemwoodData()
-          ])
-          
-          // 阶段3完成
-          loadingStage.value = 'mirror'
-          
-          // 显示API失败通知
-          errorMessage.value = 'API版本信息获取失败，但您仍然可以使用所有下载源。部分功能可能受限。'
-          
-          console.log('✅ 已获取本地版本信息，但保持下载源不受限制')
-          
-          // 数据加载完成后自动检测设备类型
-          autoSelectDeviceType()
-          
-          // 检测是否为国内IP，如果是则自动切换到柠枺源
-          const isChinaIP = await detectIsChinaIP()
-          if (isChinaIP) {
-            selectedDownloadSource.value = 'lemwood'
-          }
-          return
-          
-        } catch (localError) {
-          console.error('❌ 本地版本信息也加载失败:', localError)
-          throw new Error('所有API和本地版本信息都无法访问')
-        }
-      }
-    }
-    
-  } catch (error) {
-    console.error('获取最新版本失败:', error)
-    hasError.value = true
-    errorMessage.value = '无法获取版本信息，请检查网络连接或稍后重试'
-  }
+	loadingStage.value = "ui";
+	hasError.value = false;
+	errorMessage.value = "";
+	apiFailed.value = false;
+	fallbackToLocal.value = false;
+
+	try {
+		console.log("开始获取最新版本信息...");
+
+		// 依次尝试每个API
+		for (const apiConfig of API_CONFIGS) {
+			try {
+				console.log(`尝试使用 ${apiConfig.name}...`);
+
+				const data = await fetchFromApi(apiConfig);
+
+				console.log(`✅ ${apiConfig.name} 请求成功`);
+				latestRelease.value = data;
+
+				// 阶段1完成: release数据已加载
+				loadingStage.value = "release";
+
+				// 阶段2: 获取发布说明
+				await fetchVersionJsonData();
+
+				// 优先使用本地化数据中的描述
+				const body = localizedDescription.value || data.body || "";
+				parsedBody.value = body ? await marked.parse(body) : "";
+
+				// 阶段2完成: 发布说明已加载
+				loadingStage.value = "notes";
+
+				// 阶段3: 获取镜像数据
+				await Promise.all([
+					fetchFoxingtonData(),
+					fetchHahaData(),
+					fetchLemwoodData(),
+				]);
+
+				// 阶段3完成: 镜像数据已加载
+				loadingStage.value = "mirror";
+
+				// 数据加载完成后自动检测设备类型
+				autoSelectDeviceType();
+
+				// 检测是否为国内IP，如果是则自动切换到柠枺源
+				const isChinaIP = await detectIsChinaIP();
+				if (isChinaIP) {
+					selectedDownloadSource.value = "lemwood";
+				}
+				return; // 成功获取数据，退出函数
+			} catch (error) {
+				console.warn(`❌ ${apiConfig.name} 请求失败:`, error);
+
+				// 如果不是最后一个API，继续尝试下一个
+				if (apiConfig !== API_CONFIGS[API_CONFIGS.length - 1]) {
+					console.log("尝试下一个API...");
+					continue;
+				}
+
+				// 如果是最后一个API也失败了，标记API失败并尝试获取本地版本信息但不限制下载源
+				apiFailed.value = true;
+				console.log("所有API都无法访问，尝试获取本地版本信息但不限制下载源...");
+
+				try {
+					const localRelease = await loadLocalVersionInfo();
+					latestRelease.value = localRelease;
+
+					// 阶段1完成
+					loadingStage.value = "release";
+
+					// 阶段2: 获取发布说明
+					await fetchVersionJsonData();
+
+					// 优先使用本地化数据中的描述
+					const body = localizedDescription.value || localRelease.body || "";
+					parsedBody.value = body ? await marked.parse(body) : "";
+
+					// 阶段2完成
+					loadingStage.value = "notes";
+
+					// 阶段3: 获取镜像数据
+					await Promise.all([
+						fetchFoxingtonData(),
+						fetchHahaData(),
+						fetchLemwoodData(),
+					]);
+
+					// 阶段3完成
+					loadingStage.value = "mirror";
+
+					// 显示API失败通知
+					errorMessage.value =
+						"API版本信息获取失败，但您仍然可以使用所有下载源。部分功能可能受限。";
+
+					console.log("✅ 已获取本地版本信息，但保持下载源不受限制");
+
+					// 数据加载完成后自动检测设备类型
+					autoSelectDeviceType();
+
+					// 检测是否为国内IP，如果是则自动切换到柠枺源
+					const isChinaIP = await detectIsChinaIP();
+					if (isChinaIP) {
+						selectedDownloadSource.value = "lemwood";
+					}
+					return;
+				} catch (localError) {
+					console.error("❌ 本地版本信息也加载失败:", localError);
+					throw new Error("所有API和本地版本信息都无法访问");
+				}
+			}
+		}
+	} catch (error) {
+		console.error("获取最新版本失败:", error);
+		hasError.value = true;
+		errorMessage.value = "无法获取版本信息，请检查网络连接或稍后重试";
+	}
 }
-
-
 
 // 在数据加载完成后自动检测设备类型
 function autoSelectDeviceType() {
-  if (dynamicDeviceTypes.value.length > 1) {
-    const detectedType = detectUserDeviceType()
-    const availableType = dynamicDeviceTypes.value.find(type => type.id === detectedType)
-    if (availableType) {
-      selectedDeviceType.value = detectedType
-    }
-  }
+	if (dynamicDeviceTypes.value.length > 1) {
+		const detectedType = detectUserDeviceType();
+		const availableType = dynamicDeviceTypes.value.find(
+			(type) => type.id === detectedType,
+		);
+		if (availableType) {
+			selectedDeviceType.value = detectedType;
+		}
+	}
 }
 
 // 按规则拼接镜像加速链接
 function generateMirrorUrl(assetName: string, tagName: string) {
-  const version = tagName.replace('v', '').replace(/\./g, '')
-  return `https://download.fishcpy.top/dl/zl/${version}/${assetName}`
+	const version = tagName.replace("v", "").replace(/\./g, "");
+	return `https://download.fishcpy.top/dl/zl/${version}/${assetName}`;
 }
 
 // GitHub下载链接
 function getOriginalGitHubUrl(asset: any) {
-  return asset.browser_download_url
+	return asset.browser_download_url;
 }
 
 // 从Foxington源数据中获取对应的下载链接
 function getFoxingtonUrl(asset: any) {
-  if (!foxingtonData.value || !Array.isArray(foxingtonData.value)) {
-    return asset.browser_download_url // 降级到GitHub链接
-  }
-  
-  // 根据文件名匹配架构类型
-  const fileName = asset.name.toLowerCase()
-  let targetArchName = 'all 架构'
-  
-  if (fileName.includes('arm64-v8a') || fileName.includes('arm64')) {
-    targetArchName = 'arm64-v8a 架构'
-  } else if (fileName.includes('armeabi-v7a') || fileName.includes('armeabi')) {
-    targetArchName = 'armeabi-v7a 架构'
-  } else if (fileName.includes('x86_64') || fileName.includes('x86-64')) {
-    targetArchName = 'x86_64 架构'
-  } else if (fileName.includes('x86')) {
-    targetArchName = 'x86 架构'
-  } else if (fileName.includes('universal')) {
-    targetArchName = 'all 架构'
-  }
-  
-  // 查找匹配的文件
-  const matchedFile = foxingtonData.value.find((file: any) => 
-    file.name === targetArchName
-  )
-  
-  if (matchedFile && matchedFile.url) {
-    return matchedFile.url
-  }
-  
-  // 如果没有找到精确匹配，尝试使用通用版本
-  const universalFile = foxingtonData.value.find((file: any) => file.name === 'all 架构')
-  if (universalFile && universalFile.url) {
-    return universalFile.url
-  }
-  
-  // 最后降级到GitHub链接
-  return asset.browser_download_url
+	if (!foxingtonData.value || !Array.isArray(foxingtonData.value)) {
+		return asset.browser_download_url; // 降级到GitHub链接
+	}
+
+	// 根据文件名匹配架构类型
+	const fileName = asset.name.toLowerCase();
+	let targetArchName = "all 架构";
+
+	if (fileName.includes("arm64-v8a") || fileName.includes("arm64")) {
+		targetArchName = "arm64-v8a 架构";
+	} else if (fileName.includes("armeabi-v7a") || fileName.includes("armeabi")) {
+		targetArchName = "armeabi-v7a 架构";
+	} else if (fileName.includes("x86_64") || fileName.includes("x86-64")) {
+		targetArchName = "x86_64 架构";
+	} else if (fileName.includes("x86")) {
+		targetArchName = "x86 架构";
+	} else if (fileName.includes("universal")) {
+		targetArchName = "all 架构";
+	}
+
+	// 查找匹配的文件
+	const matchedFile = foxingtonData.value.find(
+		(file: any) => file.name === targetArchName,
+	);
+
+	if (matchedFile && matchedFile.url) {
+		return matchedFile.url;
+	}
+
+	// 如果没有找到精确匹配，尝试使用通用版本
+	const universalFile = foxingtonData.value.find(
+		(file: any) => file.name === "all 架构",
+	);
+	if (universalFile && universalFile.url) {
+		return universalFile.url;
+	}
+
+	// 最后降级到GitHub链接
+	return asset.browser_download_url;
 }
 
 // 从哈哈源数据中获取对应的下载链接
 function getHahaUrl(asset: any) {
-  if (!hahaData.value || !hahaData.value.files) {
-    return asset.browser_download_url
-  }
-  
-  const fileName = asset.name.toLowerCase()
-  let targetArch = ''
-  
-  if (fileName.includes('arm64-v8a') || fileName.includes('arm64')) {
-    targetArch = 'arm64-v8a'
-  } else if (fileName.includes('armeabi-v7a') || fileName.includes('armeabi')) {
-    targetArch = 'armeabi-v7a'
-  } else if (fileName.includes('x86_64') || fileName.includes('x86-64')) {
-    targetArch = 'x86_64'
-  } else if (fileName.includes('x86')) {
-    targetArch = 'x86'
-  }
-  
-  const matchedFile = hahaData.value.files.find((file: any) => {
-    if (targetArch === '') {
-      return file.arch === '' || file.arch === 'all' || !file.arch
-    }
-    return file.arch === targetArch
-  })
-  
-  if (matchedFile && matchedFile.link) {
-    return matchedFile.link
-  }
-  
-  return asset.browser_download_url
+	if (!hahaData.value || !hahaData.value.files) {
+		return asset.browser_download_url;
+	}
+
+	const fileName = asset.name.toLowerCase();
+	let targetArch = "";
+
+	if (fileName.includes("arm64-v8a") || fileName.includes("arm64")) {
+		targetArch = "arm64-v8a";
+	} else if (fileName.includes("armeabi-v7a") || fileName.includes("armeabi")) {
+		targetArch = "armeabi-v7a";
+	} else if (fileName.includes("x86_64") || fileName.includes("x86-64")) {
+		targetArch = "x86_64";
+	} else if (fileName.includes("x86")) {
+		targetArch = "x86";
+	}
+
+	const matchedFile = hahaData.value.files.find((file: any) => {
+		if (targetArch === "") {
+			return file.arch === "" || file.arch === "all" || !file.arch;
+		}
+		return file.arch === targetArch;
+	});
+
+	if (matchedFile && matchedFile.link) {
+		return matchedFile.link;
+	}
+
+	return asset.browser_download_url;
 }
-
-
-
 
 // 根据设备类型过滤资源
 const filteredAssets = computed(() => {
-  if (!latestRelease.value?.assets) return []
-  
-  const assets = latestRelease.value.assets
-  
-  // 如果选择"全部文件"，返回所有资源
-  if (selectedDeviceType.value === 'all') {
-    return assets
-  }
-  
-  // 查找当前选择的设备类型
-  const currentType = dynamicDeviceTypes.value.find(type => type.id === selectedDeviceType.value)
-  if (!currentType) return assets
-  
-  // 根据模式过滤文件
-  return assets.filter((asset: any) => {
-    const fileName = asset.name.toLowerCase()
-    return currentType.patterns.some(pattern => {
-      if (pattern === '*') return true
-      return fileName.includes(pattern.toLowerCase())
-    })
-  })
-})
+	if (!latestRelease.value?.assets) return [];
+
+	const assets = latestRelease.value.assets;
+
+	// 如果选择"全部文件"，返回所有资源
+	if (selectedDeviceType.value === "all") {
+		return assets;
+	}
+
+	// 查找当前选择的设备类型
+	const currentType = dynamicDeviceTypes.value.find(
+		(type) => type.id === selectedDeviceType.value,
+	);
+	if (!currentType) return assets;
+
+	// 根据模式过滤文件
+	return assets.filter((asset: any) => {
+		const fileName = asset.name.toLowerCase();
+		return currentType.patterns.some((pattern) => {
+			if (pattern === "*") return true;
+			return fileName.includes(pattern.toLowerCase());
+		});
+	});
+});
 
 // 获取当前选择的设备类型信息
 const currentDeviceType = computed(() => {
-  return dynamicDeviceTypes.value.find(type => type.id === selectedDeviceType.value) || dynamicDeviceTypes.value[0]
-})
+	return (
+		dynamicDeviceTypes.value.find(
+			(type) => type.id === selectedDeviceType.value,
+		) || dynamicDeviceTypes.value[0]
+	);
+});
 
 // 获取当前选择的下载源信息
 const currentDownloadSource = computed(() => {
-  return downloadSources.find(source => source.id === selectedDownloadSource.value) || downloadSources[0]
-})
+	return (
+		downloadSources.find(
+			(source) => source.id === selectedDownloadSource.value,
+		) || downloadSources[0]
+	);
+});
 
 // 获取柠枺镜像源URL
 function getLemwoodUrl(asset: any) {
-  if (!lemwoodData.value || !lemwoodData.value.length) {
-    return getOriginalGitHubUrl(asset);
-  }
+	if (!lemwoodData.value || !lemwoodData.value.length) {
+		return getOriginalGitHubUrl(asset);
+	}
 
-  // 策略1：通过 tag_name 匹配
-  const currentTagName = latestRelease.value.tag_name;
-  const normalizedTagName = currentTagName.replace(/^v/, '');
+	// 策略1：通过 tag_name 匹配
+	const currentTagName = latestRelease.value.tag_name;
+	const normalizedTagName = currentTagName.replace(/^v/, "");
 
-  let matchedRelease = lemwoodData.value.find((release: any) => 
-    release.tag_name === currentTagName || release.tag_name === normalizedTagName
-  );
-  
-  if (matchedRelease && matchedRelease.assets) {
-    const matchedAsset = matchedRelease.assets.find((lemwoodAsset: any) => lemwoodAsset.name === asset.name);
-    if (matchedAsset) return matchedAsset.url;
-  }
+	let matchedRelease = lemwoodData.value.find(
+		(release: any) =>
+			release.tag_name === currentTagName ||
+			release.tag_name === normalizedTagName,
+	);
 
-  // 策略2：如果策略1失败，尝试在所有版本中倒序查找文件名匹配的资源
-  for (let i = lemwoodData.value.length - 1; i >= 0; i--) {
-    const release = lemwoodData.value[i];
-    if (release.assets) {
-      const matchedAsset = release.assets.find((lemwoodAsset: any) => lemwoodAsset.name === asset.name);
-      if (matchedAsset) return matchedAsset.url;
-    }
-  }
+	if (matchedRelease && matchedRelease.assets) {
+		const matchedAsset = matchedRelease.assets.find(
+			(lemwoodAsset: any) => lemwoodAsset.name === asset.name,
+		);
+		if (matchedAsset) return matchedAsset.url;
+	}
 
-  return getOriginalGitHubUrl(asset);
+	// 策略2：如果策略1失败，尝试在所有版本中倒序查找文件名匹配的资源
+	for (let i = lemwoodData.value.length - 1; i >= 0; i--) {
+		const release = lemwoodData.value[i];
+		if (release.assets) {
+			const matchedAsset = release.assets.find(
+				(lemwoodAsset: any) => lemwoodAsset.name === asset.name,
+			);
+			if (matchedAsset) return matchedAsset.url;
+		}
+	}
+
+	return getOriginalGitHubUrl(asset);
 }
 
 // 获取下载链接
 function getDownloadUrl(asset: any) {
-  if (fallbackToLocal.value) {
-    return asset.browser_download_url
-  }
-  
-  if (selectedDownloadSource.value === 'mirror') {
-    return generateMirrorUrl(asset.name, latestRelease.value.tag_name)
-  } else if (selectedDownloadSource.value === 'foxington') {
-    return getFoxingtonUrl(asset)
-  } else if (selectedDownloadSource.value === 'haha') {
-    return getHahaUrl(asset)
-  } else if (selectedDownloadSource.value === 'lemwood') {
-    return getLemwoodUrl(asset)
-  } else {
-    return getOriginalGitHubUrl(asset)
-  }
+	if (fallbackToLocal.value) {
+		return asset.browser_download_url;
+	}
+
+	if (selectedDownloadSource.value === "mirror") {
+		return generateMirrorUrl(asset.name, latestRelease.value.tag_name);
+	} else if (selectedDownloadSource.value === "foxington") {
+		return getFoxingtonUrl(asset);
+	} else if (selectedDownloadSource.value === "haha") {
+		return getHahaUrl(asset);
+	} else if (selectedDownloadSource.value === "lemwood") {
+		return getLemwoodUrl(asset);
+	} else {
+		return getOriginalGitHubUrl(asset);
+	}
 }
 
 // 格式化文件大小
 function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+	if (bytes === 0) return "0 Bytes";
+	const k = 1024;
+	const sizes = ["Bytes", "KB", "MB", "GB"];
+	const i = Math.floor(Math.log(bytes) / Math.log(k));
+	return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
 // 处理设备类型下拉菜单的blur事件
 function handleDeviceDropdownBlur() {
-  if (typeof window !== 'undefined' && window.setTimeout) {
-    window.setTimeout(() => {
-      isDeviceDropdownOpen.value = false
-    }, 200)
-  }
+	if (typeof window !== "undefined" && window.setTimeout) {
+		window.setTimeout(() => {
+			isDeviceDropdownOpen.value = false;
+		}, 200);
+	}
 }
 
 // 处理下载源下拉菜单的blur事件
 function handleSourceDropdownBlur() {
-  if (typeof window !== 'undefined' && window.setTimeout) {
-    window.setTimeout(() => {
-      isSourceDropdownOpen.value = false
-    }, 200)
-  }
+	if (typeof window !== "undefined" && window.setTimeout) {
+		window.setTimeout(() => {
+			isSourceDropdownOpen.value = false;
+		}, 200);
+	}
 }
-
 
 // 组件挂载时获取数据
 onMounted(() => {
-    // 重置状态
-    apiFailed.value = false
-    fallbackToLocal.value = false
-    
-    fetchLatestRelease()
-    
-    // 如果使用本地版本，确保下载源为GitHub官方源
-    if (fallbackToLocal.value) {
-      selectedDownloadSource.value = 'github'
-    }
-  })
+	// 重置状态
+	apiFailed.value = false;
+	fallbackToLocal.value = false;
+
+	fetchLatestRelease();
+
+	// 如果使用本地版本，确保下载源为GitHub官方源
+	if (fallbackToLocal.value) {
+		selectedDownloadSource.value = "github";
+	}
+});
 </script>
 
 <template>
@@ -946,10 +1042,9 @@ onMounted(() => {
               
               <div class="dropdown-menu">
                 <button 
-                  v-for="device in dynamicDeviceTypes" 
+                  v-for="device in dynamicDeviceTypes.filter(d => d.id !== selectedDeviceType)" 
                   :key="device.id"
                   class="dropdown-item"
-                  :class="{ 'is-selected': selectedDeviceType === device.id }"
                   @click="selectedDeviceType = device.id; isDeviceDropdownOpen = false"
                 >
                   <span v-if="device.icon" class="device-icon">{{ device.icon }}</span>
@@ -957,7 +1052,6 @@ onMounted(() => {
                     <span class="device-name">{{ device.name }}</span>
                     <span class="device-desc">{{ device.description }}</span>
                   </span>
-                  <span v-if="selectedDeviceType === device.id" class="check-icon">✓</span>
                 </button>
               </div>
             </div>
@@ -983,11 +1077,10 @@ onMounted(() => {
           
           <div class="dropdown-menu">
             <button 
-              v-for="source in downloadSources" 
+              v-for="source in downloadSources.filter(s => s.id !== selectedDownloadSource)" 
               :key="source.id"
               class="dropdown-item"
               :class="{ 
-                'is-selected': selectedDownloadSource === source.id,
                 'is-disabled': !sourceAvailability[source.id]
               }"
               :disabled="!sourceAvailability[source.id]"
@@ -1001,7 +1094,6 @@ onMounted(() => {
                 </span>
                 <span v-if="!sourceAvailability[source.id]" class="disabled-hint">（暂不可用）</span>
               </span>
-              <span v-if="selectedDownloadSource === source.id" class="check-icon">✓</span>
             </button>
           </div>
         </div>
@@ -1449,6 +1541,8 @@ onMounted(() => {
 
 .dropdown.is-open .dropdown-trigger {
   box-shadow: 0 0 0 3px var(--vp-c-brand-soft);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .dropdown-content {
@@ -1515,9 +1609,11 @@ onMounted(() => {
   top: 100%;
   left: 0;
   right: 0;
+  margin-top: -1px;
   background: var(--vp-c-bg);
-  border: 1px solid var(--vp-c-border);
-  border-radius: 12px;
+  border: 2px solid var(--vp-c-brand-1);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
   box-shadow: var(--vp-shadow-3);
   z-index: 50;
   max-height: 300px;

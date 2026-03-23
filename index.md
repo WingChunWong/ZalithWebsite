@@ -30,6 +30,3 @@ features:
     title: 内容管理器
     details: 支持对游戏版本的游戏资源进行管理
 ---
-
-### 法律声明
-“Minecraft”及“我的世界”是 _Microsoft Corporation_ 和 _Mojang Synergies AB_ 的注册商标。ZalithLauncher 与 Microsoft、Mojang 或网易公司无任何从属或合作关系。
